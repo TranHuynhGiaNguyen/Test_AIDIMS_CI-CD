@@ -2,57 +2,160 @@ package com.aidims.aidimsbackend.controller;
 
 import com.aidims.aidimsbackend.entity.Patient;
 import com.aidims.aidimsbackend.repository.PatientRepository;
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.Mockito;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.test.web.servlet.MockMvc;
-import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.test.autoconfigure.web.servlet.WebMvcTest;
+import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
+import org.springframework.boot.test.mock.mockito.MockBean;
+
+import org.springframework.test.web.servlet.MockMvc;
+
+import java.util.List;
 import java.util.Optional;
 
-import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
-import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@ExtendWith(MockitoExtension.class)
-@DisplayName("PatientControllerTest - Kiểm duyệt sinh hiệu")
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.*;
+
+@WebMvcTest(PatientController.class)
+@AutoConfigureMockMvc(addFilters = false)
 class PatientControllerTest {
 
+    @Autowired
     private MockMvc mockMvc;
 
-    @Mock
+    @MockBean
     private PatientRepository patientRepository;
 
-    @InjectMocks
-    private PatientController patientController;
-
-    @BeforeEach
-    void setUp() {
-        mockMvc = MockMvcBuilders.standaloneSetup(patientController).build();
+    private Patient createPatient(Long id, Integer oxygenSaturation) {
+        Patient patient = new Patient();
+        patient.setPatient_id(id);
+        patient.setPatient_code("BN001");
+        patient.setFull_name("Nguyen Van A");
+        patient.setOxygen_saturation(oxygenSaturation);
+        return patient;
     }
 
     @Test
-    @DisplayName("❌ Lỗi nghiệp vụ: SpO2 vượt quá giới hạn 100% vẫn được chấp nhận lưu trữ")
-    void testGetPatientById_withInvalidOxygenSaturation_shouldFailValidation() {
-        Patient invalidPatient = new Patient();
-        invalidPatient.setPatient_id(1L);
-        invalidPatient.setFull_name("Bệnh nhân A");
-        invalidPatient.setOxygen_saturation(150); // Chỉ số SpO2 tối đa chỉ là 100%
+    void getAllPatients_shouldReturnOk() throws Exception {
 
-        when(patientRepository.findById(1L)).thenReturn(Optional.of(invalidPatient));
+        Patient patient = createPatient(1L, 98);
 
-        Patient result = patientController.getPatientById(1L);
+        when(patientRepository.findAll())
+                .thenReturn(List.of(patient));
 
-        // Mong đợi chỉ số SpO2 phải hợp lệ (<= 100).
-        // Test case này sẽ FAIL vì thực tế hệ thống lưu và trả về giá trị 150% bình
-        // thường.
-        assertTrue(result.getOxygen_saturation() <= 100,
-                "Chỉ số SpO2 của bệnh nhân không thể lớn hơn 100%!");
+        mockMvc.perform(get("/api/patients"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$[0].patient_id").value(1))
+                .andExpect(jsonPath("$[0].patient_code").value("BN001"))
+                .andExpect(jsonPath("$[0].oxygen_saturation").value(98));
+    }
+
+    @Test
+    void getAllPatients_shouldReturnEmptyList() throws Exception {
+
+        when(patientRepository.findAll())
+                .thenReturn(List.of());
+
+        mockMvc.perform(get("/api/patients"))
+                .andExpect(status().isOk())
+                .andExpect(content().json("[]"));
+    }
+
+    @Test
+    void getPatientById_shouldReturnPatient() throws Exception {
+
+        Patient patient = createPatient(1L, 98);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.patient_id").value(1))
+                .andExpect(jsonPath("$.oxygen_saturation").value(98));
+    }
+
+    @Test
+    void getPatientById_whenNotFound_shouldReturnNull() throws Exception {
+
+        when(patientRepository.findById(999L))
+                .thenReturn(Optional.empty());
+
+        mockMvc.perform(get("/api/patients/999"))
+                .andExpect(status().isOk())
+                .andExpect(content().string(""));
+    }
+
+    @Test
+    void getPatientById_whenOxygenGreaterThan100_shouldClampTo100()
+            throws Exception {
+
+        Patient patient = createPatient(1L, 120);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.oxygen_saturation").value(100));
+    }
+
+    @Test
+    void getPatientById_whenOxygenLessThan0_shouldClampTo0()
+            throws Exception {
+
+        Patient patient = createPatient(1L, -10);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.oxygen_saturation").value(0));
+    }
+
+    @Test
+    void getPatientById_whenOxygenEquals100_shouldRemain100()
+            throws Exception {
+
+        Patient patient = createPatient(1L, 100);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.oxygen_saturation").value(100));
+    }
+
+    @Test
+    void getPatientById_whenOxygenEquals0_shouldRemain0()
+            throws Exception {
+
+        Patient patient = createPatient(1L, 0);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.oxygen_saturation").value(0));
+    }
+
+    @Test
+    void getPatientById_whenOxygenIsNull_shouldReturnPatient()
+            throws Exception {
+
+        Patient patient = createPatient(1L, null);
+
+        when(patientRepository.findById(1L))
+                .thenReturn(Optional.of(patient));
+
+        mockMvc.perform(get("/api/patients/1"))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.patient_id").value(1));
     }
 }

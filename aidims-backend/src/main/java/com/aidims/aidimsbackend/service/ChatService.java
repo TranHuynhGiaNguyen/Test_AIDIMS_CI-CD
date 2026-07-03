@@ -452,6 +452,10 @@ public class ChatService {
         return " **Đa triệu chứng:** " + combo + "\n **Cần đánh giá toàn diện**";
     }
     public String analyzeImages(ImageAnalysisRequest request) {
+        if (request == null || request.getImages() == null || request.getImages().isEmpty()) {
+            throw new IllegalArgumentException("Danh sách hình ảnh không được trống!");
+        }
+
         if (geminiApiKey == null || geminiApiKey.trim().isEmpty() ||
                 geminiApiKey.equals("YOUR_GEMINI_API_KEY_HERE")) {
             throw new RuntimeException("Gemini API key chưa được cấu hình");

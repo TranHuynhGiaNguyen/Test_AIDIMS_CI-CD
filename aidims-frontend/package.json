@@ -25,7 +25,8 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "test:e2e": "codeceptjs run --steps"
   },
   "eslintConfig": {
     "extends": [
@@ -53,6 +54,8 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.21",
+    "codeceptjs": "^4.0.8",
+    "playwright": "^1.61.1",
     "postcss": "^8.5.3",
     "tailwindcss": "^4.1.7"
   }

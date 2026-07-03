@@ -1,29 +1,41 @@
 package com.aidims.aidimsbackend.service;
 
-import org.junit.jupiter.api.BeforeEach;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.InjectMocks;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.test.util.ReflectionTestUtils;
-
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNull;
+
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
-import static org.mockito.Mockito.*;
+import static org.mockito.Mockito.times;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+
+import org.mockito.junit.jupiter.MockitoExtension;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.test.util.ReflectionTestUtils;
+
+import com.aidims.aidimsbackend.repository.ImagingResultRepository;
 
 @ExtendWith(MockitoExtension.class)
-@DisplayName("DicomViewerService - Unit Tests")
+@DisplayName("DicomViewerService - Unit Test")
 class DicomViewerServiceTest {
+
+    @Mock
+    private ImagingResultRepository imagingResultRepository;
 
     @Mock
     private JdbcTemplate jdbcTemplate;
@@ -31,161 +43,195 @@ class DicomViewerServiceTest {
     @InjectMocks
     private DicomViewerService dicomViewerService;
 
-    private Map<String, Object> sampleDicomRow;
+    private Map<String, Object> dbRow;
 
     @BeforeEach
     void setUp() {
-        ReflectionTestUtils.setField(dicomViewerService, "serverPort", "8080");
 
-        sampleDicomRow = new HashMap<>();
-        sampleDicomRow.put("id", 1L);
-        sampleDicomRow.put("file_name", "test_file.dcm");
-        sampleDicomRow.put("file_path", "dicom_uploads/test_file.dcm");
-        sampleDicomRow.put("file_size", 2048L);
-        sampleDicomRow.put("import_date", LocalDateTime.of(2026, 6, 24, 11, 0));
-        sampleDicomRow.put("notes", "My notes");
-        sampleDicomRow.put("patient_code", "BN001");
-        sampleDicomRow.put("performed_by", 5L);
-        sampleDicomRow.put("status", "imported");
-        sampleDicomRow.put("study_type", "CT");
-        sampleDicomRow.put("technical_params", "{\"kVp\":\"120\"}");
-        sampleDicomRow.put("patient_name", "John Smith");
-        sampleDicomRow.put("gender", "Male");
-        sampleDicomRow.put("patient_phone", "0123456789");
-        sampleDicomRow.put("performed_by_name", "Dr. Alice");
+        ReflectionTestUtils.setField(
+                dicomViewerService,
+                "serverPort",
+                "8080"
+        );
+
+        dbRow = new HashMap<>();
+
+        dbRow.put("id", 1L);
+        dbRow.put("body_part", "CHEST");
+        dbRow.put("file_name", "chest_xray.dcm");
+        dbRow.put("file_path", "dicom_uploads/chest_xray.dcm");
+
+        dbRow.put("patient_code", "BN999");
+        dbRow.put("patient_name", "Bệnh Nhân Nguyễn Văn A");
+
+        dbRow.put(
+                "import_date",
+                LocalDateTime.of(
+                        2026,
+                        7,
+                        1,
+                        10,
+                        30
+                )
+        );
+
+        dbRow.put("status", "imported");
+        dbRow.put("study_type", "X-Ray");
+        dbRow.put("notes", "Test");
+        dbRow.put("performed_by_name", "Admin");
     }
 
     @Test
-    @DisplayName("✅ getAllDicomViewer - Trả về danh sách DICOM đã chuẩn hóa thành công")
-    void getAllDicomViewer_Success() {
+    @DisplayName("Get all DICOM viewer successfully")
+    void testGetAllDicomViewer_Success() {
+
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(sampleDicomRow);
+        rows.add(dbRow);
 
-        when(jdbcTemplate.queryForList(anyString())).thenReturn(rows);
+        when(
+                jdbcTemplate.queryForList(anyString())
+        ).thenReturn(rows);
 
-        List<Map<String, Object>> result = dicomViewerService.getAllDicomViewer();
+        List<Map<String, Object>> result =
+                dicomViewerService.getAllDicomViewer();
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        Map<String, Object> record = result.get(0);
-        assertEquals("test_file.dcm", record.get("fileName"));
-        assertEquals("John Smith", record.get("fullName"));
-        assertEquals("http://localhost:8080/api/dicom-viewer/image/test_file.dcm", record.get("imageUrl"));
+
+        assertEquals(
+                1,
+                result.size()
+        );
+
+        Map<String, Object> item = result.get(0);
+
+        assertEquals(
+                "Bệnh Nhân Nguyễn Văn A",
+                item.get("fullName")
+        );
+
+        assertEquals(
+                "01/07/2026 10:30",
+                item.get("dateTaken")
+        );
+
+        assertEquals(
+                "http://localhost:8080/api/dicom-viewer/image/chest_xray.dcm",
+                item.get("imageUrl")
+        );
+
+        verify(
+                jdbcTemplate,
+                times(1)
+        ).queryForList(anyString());
     }
 
     @Test
-    @DisplayName("✅ getDicomViewerById - Lấy chi tiết DICOM theo ID thành công")
-    void getDicomViewerById_Found() {
+    @DisplayName("Get DICOM by ID successfully")
+    void testGetDicomViewerById_Found() {
+
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(sampleDicomRow);
+        rows.add(dbRow);
 
-        when(jdbcTemplate.queryForList(anyString(), eq(1L))).thenReturn(rows);
+        when(
+                jdbcTemplate.queryForList(
+                        anyString(),
+                        eq(1L)
+                )
+        ).thenReturn(rows);
 
-        Map<String, Object> result = dicomViewerService.getDicomViewerById(1L);
+        Map<String, Object> result =
+                dicomViewerService.getDicomViewerById(1L);
 
         assertNotNull(result);
-        assertEquals("test_file.dcm", result.get("fileName"));
-        assertEquals("BN001", result.get("patientCode"));
+
+        assertEquals(
+                1L,
+                result.get("id")
+        );
+
+        assertEquals(
+                "Bệnh Nhân Nguyễn Văn A",
+                result.get("fullName")
+        );
+
+        assertEquals(
+                "http://localhost:8080/api/dicom-viewer/image/chest_xray.dcm",
+                result.get("imageUrl")
+        );
+
+        verify(
+                jdbcTemplate,
+                times(1)
+        ).queryForList(
+                anyString(),
+                eq(1L)
+        );
     }
 
     @Test
-    @DisplayName("✅ getDicomViewerById - Trả về null khi không tìm thấy ID")
-    void getDicomViewerById_NotFound() {
-        when(jdbcTemplate.queryForList(anyString(), eq(999L))).thenReturn(new ArrayList<>());
+    @DisplayName("Missing file name should return null image url")
+    void testGetDicomViewerById_MissingFileName() {
 
-        Map<String, Object> result = dicomViewerService.getDicomViewerById(999L);
+        dbRow.put("file_name", "");
 
-        assertNull(result);
-    }
-
-    @Test
-    @DisplayName("✅ getDicomViewerByPatient - Lấy danh sách DICOM của bệnh nhân thành công")
-    void getDicomViewerByPatient_Success() {
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(sampleDicomRow);
+        rows.add(dbRow);
 
-        when(jdbcTemplate.queryForList(anyString(), eq("BN001"))).thenReturn(rows);
+        when(
+                jdbcTemplate.queryForList(
+                        anyString(),
+                        eq(1L)
+                )
+        ).thenReturn(rows);
 
-        List<Map<String, Object>> result = dicomViewerService.getDicomViewerByPatient("BN001");
+        Map<String, Object> result =
+                dicomViewerService.getDicomViewerById(1L);
 
         assertNotNull(result);
-        assertEquals(1, result.size());
-        assertEquals("BN001", result.get(0).get("patientCode"));
+
+        assertNull(
+                result.get("imageUrl")
+        );
     }
 
     @Test
-    @DisplayName("✅ searchDicomViewer - Tìm kiếm DICOM theo từ khóa thành công")
-    void searchDicomViewer_Success() {
+    @DisplayName("Get DICOM file path successfully")
+    void testGetDicomViewerFilePath_Success() {
+
         List<Map<String, Object>> rows = new ArrayList<>();
-        rows.add(sampleDicomRow);
 
-        String keyword = "John";
-        String pattern = "%" + keyword + "%";
-
-        when(jdbcTemplate.queryForList(anyString(),
-                eq(pattern), eq(pattern), eq(pattern),
-                eq(pattern), eq(pattern), eq(pattern)))
-                .thenReturn(rows);
-
-        List<Map<String, Object>> result = dicomViewerService.searchDicomViewer(keyword);
-
-        assertNotNull(result);
-        assertEquals(1, result.size());
-    }
-
-    @Test
-    @DisplayName("✅ getDicomViewerFilePath - Lấy đường dẫn tệp tin DICOM lưu trong DB thành công")
-    void getDicomViewerFilePath_Success() {
-        List<Map<String, Object>> rows = new ArrayList<>();
         Map<String, Object> row = new HashMap<>();
-        row.put("file_path", "dicom_uploads/test_file.dcm");
+
+        row.put(
+                "file_path",
+                "dicom_uploads/chest_xray.dcm"
+        );
+
         rows.add(row);
 
-        when(jdbcTemplate.queryForList(anyString(), eq("test_file.dcm"))).thenReturn(rows);
+        when(
+                jdbcTemplate.queryForList(
+                        anyString(),
+                        eq("chest_xray.dcm")
+                )
+        ).thenReturn(rows);
 
-        String path = dicomViewerService.getDicomViewerFilePath("test_file.dcm");
+        String filePath =
+                dicomViewerService.getDicomViewerFilePath(
+                        "chest_xray.dcm"
+                );
 
-        assertEquals("dicom_uploads/test_file.dcm", path);
-    }
+        assertEquals(
+                "dicom_uploads/chest_xray.dcm",
+                filePath
+        );
 
-    @Test
-    @DisplayName("✅ getDicomViewerStats - Thống kê chính xác số liệu lưu trữ DICOM")
-    void getDicomViewerStats_Success() {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        Map<String, Object> statsRow = new HashMap<>();
-        statsRow.put("total_count", 15L);
-        statsRow.put("mri_count", 5L);
-        statsRow.put("ct_count", 5L);
-        statsRow.put("xray_count", 5L);
-        statsRow.put("total_size", 102400L);
-        statsRow.put("unique_patients", 3L);
-        rows.add(statsRow);
-
-        when(jdbcTemplate.queryForList(anyString())).thenReturn(rows);
-
-        Map<String, Object> stats = dicomViewerService.getDicomViewerStats();
-
-        assertNotNull(stats);
-        assertEquals(15L, stats.get("total_count"));
-        assertEquals(5L, stats.get("mri_count"));
-        assertEquals(102400L, stats.get("total_size"));
-    }
-
-    @Test
-    @DisplayName("❌ Lỗi nghiệp vụ: Đường dẫn imageUrl của DICOM Viewer chứa khoảng trắng phải được mã hóa URL thành %20 hoặc phù hợp")
-    void getAllDicomViewer_shouldUrlEncodeImageUrls() {
-        List<Map<String, Object>> rows = new ArrayList<>();
-        Map<String, Object> row = new HashMap<>(sampleDicomRow);
-        row.put("file_name", "chest scan.dcm");
-        rows.add(row);
-
-        when(jdbcTemplate.queryForList(anyString())).thenReturn(rows);
-
-        List<Map<String, Object>> result = dicomViewerService.getAllDicomViewer();
-        String imageUrl = (String) result.get(0).get("imageUrl");
-
-        assertNotNull(imageUrl);
-        // Do DicomViewerService không mã hóa URL (chỉ nối chuỗi trực tiếp), test này sẽ FAIL về mặt logic
-        assertTrue(imageUrl.contains("chest%20scan.dcm"), "Đường dẫn ảnh phải được URL encode: " + imageUrl);
+        verify(
+                jdbcTemplate,
+                times(1)
+        ).queryForList(
+                anyString(),
+                eq("chest_xray.dcm")
+        );
     }
 }

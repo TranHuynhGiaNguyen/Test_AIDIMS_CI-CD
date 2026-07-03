@@ -18,7 +18,8 @@ export const authService = {
 
       const data = await response.json();
       
-      if (data.success) {
+      if (data.success || data.status === "success") {
+        data.success = true;
         localStorage.setItem("user", JSON.stringify(data.data));
       }
       

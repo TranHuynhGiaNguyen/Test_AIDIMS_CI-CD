@@ -65,7 +65,17 @@ public class DicomImportController {
                 return ResponseEntity.status(400).body("Chỉ hỗ trợ file DICOM (.dcm, .dicom, .dc3, .dic)");
             }
         }
-        
+        // ✅ FIX BUG #1: Validate patient_code
+        if (patientCode == null || patientCode.trim().isEmpty()) {
+            return ResponseEntity.status(400)
+                .body("Ma benh nhan khong duoc de trong!");
+        }
+
+        // ✅ FIX BUG #2: Validate study_type
+        if (studyType == null || studyType.trim().isEmpty()) {
+            return ResponseEntity.status(400)
+                .body("Loai chup khong duoc de trong!");
+        }
         // ====== PHẦN CODE CŨ ======
         
         // Lưu file vào thư mục dicom_uploads tuyệt đối
@@ -74,7 +84,7 @@ public class DicomImportController {
         if (!dir.exists()) dir.mkdirs();
         
         // Tạo tên file mới (thêm timestamp và replace khoảng trắng)
-        String newFileName = System.currentTimeMillis() + "_" + originalFileName.replaceAll("\\s+", "_");
+        String newFileName = System.currentTimeMillis() + "" + originalFileName.replaceAll("\\s+", "");
         String filePath = uploadDir + newFileName;
         
         try {

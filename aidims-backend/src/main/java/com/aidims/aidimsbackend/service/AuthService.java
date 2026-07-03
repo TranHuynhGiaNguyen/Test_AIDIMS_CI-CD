@@ -1,15 +1,16 @@
 package com.aidims.aidimsbackend.service;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Optional;
+
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Service;
+
 import com.aidims.aidimsbackend.dto.LoginRequest;
 import com.aidims.aidimsbackend.dto.LoginResponse;
 import com.aidims.aidimsbackend.entity.User;
 import com.aidims.aidimsbackend.repository.UserRepository;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.stereotype.Service;
-
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Optional;
 
 @Service
 public class AuthService {
@@ -19,6 +20,15 @@ public class AuthService {
 
     public LoginResponse login(LoginRequest request) {
         try {
+            if (request == null) {
+                return LoginResponse.error("Yêu cầu đăng nhập không hợp lệ");
+            }
+
+            String requestedRole = request.getRole();
+            if (requestedRole == null || requestedRole.trim().isEmpty()) {
+                return LoginResponse.error("Vai trò đăng nhập không được để trống");
+            }
+
             Optional<User> userOpt = userRepository.findByUsername(request.getUsername());
             
             if (userOpt.isEmpty()) {
@@ -34,6 +44,11 @@ public class AuthService {
             
             if (!user.isActive()) {
                 return LoginResponse.error("Tài khoản đã bị vô hiệu hóa");
+            }
+
+            String actualRole = user.getRole() != null ? user.getRole().getRoleName() : null;
+            if (actualRole == null || !actualRole.equalsIgnoreCase(requestedRole.trim())) {
+                return LoginResponse.error("Tài khoản không thuộc vai trò yêu cầu");
             }
             
             // Tạo response

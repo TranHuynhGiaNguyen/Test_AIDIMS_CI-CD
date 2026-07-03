@@ -30,6 +30,10 @@ public class CompareImagesService {
      * Lấy danh sách DICOM theo mã bệnh nhân (từ bảng dicom_imports) để so sánh
      */
     public List<Map<String, Object>> searchByPatientCode(String keyword) {
+        if (keyword == null || keyword.trim().isEmpty()) {
+            throw new IllegalArgumentException("Từ khóa tìm kiếm không được để trống!");
+        }
+
         String sql = """
             SELECT 
                 di.id,

@@ -39,7 +39,7 @@ if (fs.existsSync(surefireReportsDir)) {
 function parseBackendUtFailures() {
     const reportsDir = './aidims-backend/target/surefire-reports';
     if (!fs.existsSync(reportsDir)) return '[]';
-    
+
     let failures = [];
     try {
         const files = fs.readdirSync(reportsDir);
@@ -51,7 +51,7 @@ function parseBackendUtFailures() {
                 for (let i = 0; i < lines.length; i++) {
                     const line = lines[i].trim();
                     if (line.startsWith('Tests run:')) continue; // Skip test set summary lines
-                    
+
                     if (line.includes('<<< FAILURE!') || line.includes('<<< ERROR!')) {
                         let testCase = line.split('<<<')[0].trim();
                         if (testCase.includes(' -- ')) {
@@ -69,7 +69,7 @@ function parseBackendUtFailures() {
     } catch (e) {
         console.warn('⚠️ Cảnh báo: Không thể parse báo cáo test Backend:', e.message);
     }
-    
+
     return JSON.stringify(failures);
 }
 
@@ -77,13 +77,13 @@ function parseBackendUtFailures() {
 function parseFrontendUtFailures(error) {
     const output = (error.stdout ? error.stdout.toString() : '') + '\n' + (error.stderr ? error.stderr.toString() : '');
     if (!output.trim()) return '[]';
-    
+
     const sections = output.split('●');
     if (sections.length <= 1) {
         const lines = output.split('\n');
         return JSON.stringify([{ testCase: 'TC-UT-FRONTEND', errMsg: lines.slice(-15).join('\n').trim() }]);
     }
-    
+
     let failures = [];
     for (let i = 1; i < sections.length; i++) {
         const lines = sections[i].split('\n');
@@ -98,7 +98,7 @@ function parseFrontendUtFailures(error) {
         }
         failures.push({ testCase, errMsg: errMsgLines.join('\n') });
     }
-    
+
     return JSON.stringify(failures);
 }
 
@@ -106,7 +106,7 @@ function parseFrontendUtFailures(error) {
 console.log(' Bước 0: Đang chạy Unit Tests...');
 try {
     console.log(' - Đang chạy Backend Unit Tests...');
-    const mvnCmd = process.platform === 'win32' ? 'mvnw.cmd test' : './mvnw test';
+    const mvnCmd = process.platform === 'win32' ? 'mvnw.cmd clean test' : './mvnw clean test';
     const output = execSync(mvnCmd, { cwd: './aidims-backend', stdio: 'pipe' });
     console.log(output.toString());
     console.log(' - Backend Unit Tests: PASS.');

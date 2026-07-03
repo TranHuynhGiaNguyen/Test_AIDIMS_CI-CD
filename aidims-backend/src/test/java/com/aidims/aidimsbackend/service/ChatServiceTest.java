@@ -33,13 +33,11 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("✅ getChatResponse - Hoạt động bình thường với cơ chế Fallback nội bộ khi không có API key thực")
+    @DisplayName("getChatResponse - Hoat dong binh thuong voi co che Fallback noi bo khi khong co API key thuc")
     void getChatResponse_FallbackSuccess() {
-        // Tắt API keys để ép chạy vào fallback logic
         ReflectionTestUtils.setField(chatService, "geminiApiKey", "");
         ReflectionTestUtils.setField(chatService, "openaiApiKey", "");
 
-        // Gọi với triệu chứng tim mạch
         String response = chatService.getChatResponse("đau ngực và khó thở");
 
         assertNotNull(response);
@@ -49,7 +47,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("✅ getChatResponse - Nhận biết đúng triệu chứng tiêu hóa và đưa ra khuyến nghị")
+    @DisplayName("getChatResponse - Nhan biet dung trieu chung tieu hoa va dua ra khuyen nghi")
     void getChatResponse_SymptomGastrointestinal() {
         ReflectionTestUtils.setField(chatService, "geminiApiKey", "");
         ReflectionTestUtils.setField(chatService, "openaiApiKey", "");
@@ -62,7 +60,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("✅ getChatResponse - Đưa ra cảnh báo khẩn cấp khi triệu chứng nguy hiểm")
+    @DisplayName("getChatResponse - Dua ra canh bao khan cap khi trieu chung nguy hiem")
     void getChatResponse_EmergencyAnalysis() {
         ReflectionTestUtils.setField(chatService, "geminiApiKey", "");
         ReflectionTestUtils.setField(chatService, "openaiApiKey", "");
@@ -75,7 +73,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("❌ testGeminiDirectly - Ném ngoại lệ khi API key chưa được cấu hình")
+    @DisplayName("testGeminiDirectly - Nem ngoai le khi API key chua duoc cau hinh")
     void testGeminiDirectly_MissingApiKey() {
         ReflectionTestUtils.setField(chatService, "geminiApiKey", "");
 
@@ -83,7 +81,7 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("❌ analyzeImages - Ném ngoại lệ khi gọi AI Vision mà không có API key")
+    @DisplayName("analyzeImages - Nem ngoai le khi goi AI Vision ma khong co API key")
     void analyzeImages_MissingApiKey() {
         ReflectionTestUtils.setField(chatService, "geminiApiKey", "");
         ImageAnalysisRequest req = new ImageAnalysisRequest();
@@ -92,13 +90,12 @@ class ChatServiceTest {
     }
 
     @Test
-    @DisplayName("❌ Lỗi nghiệp vụ: Service không được phép phân tích hình ảnh khi danh sách hình ảnh gửi lên bị rỗng")
+    @DisplayName("Loi nghiep vu: Service khong duoc phep phan tich hinh anh khi danh sach hinh anh gui len bi rong")
     void analyzeImages_EmptyImagesList_ThrowsException() {
         ImageAnalysisRequest req = new ImageAnalysisRequest();
         req.setImages(new ArrayList<>());
         req.setMessage("Phân tích");
 
-        // Thực tế Service không kiểm tra danh sách rỗng trước khi xử lý, dẫn đến test này bị FAIL
         assertThrows(IllegalArgumentException.class, () -> chatService.analyzeImages(req),
             "Danh sách ảnh trống phải ném ra IllegalArgumentException"
         );

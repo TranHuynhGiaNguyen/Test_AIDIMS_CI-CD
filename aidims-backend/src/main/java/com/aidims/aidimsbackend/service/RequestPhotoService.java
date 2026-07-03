@@ -22,6 +22,10 @@ public class RequestPhotoService {
 
     @Transactional
     public RequestPhotoDTO createRequest(RequestPhotoDTO dto) {
+        if (dto.getRequestDate() != null && dto.getRequestDate().isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("Ngày chỉ định không được trong quá khứ!");
+        }
+
         try {
             System.out.println("=== SERVICE CREATE REQUEST ===");
             System.out.println("Input DTO: " + dto.getPatientId() + ", " + dto.getImagingType());
@@ -47,6 +51,8 @@ public class RequestPhotoService {
 
             return result;
 
+        } catch (IllegalArgumentException e) {
+            throw e;
         } catch (Exception e) {
             System.err.println("Service error: " + e.getMessage());
             e.printStackTrace();

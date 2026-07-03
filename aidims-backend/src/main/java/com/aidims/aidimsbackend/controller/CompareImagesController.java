@@ -64,6 +64,6 @@ public class CompareImagesController {
      */
     @GetMapping("/test")
     public ResponseEntity<String> test() {
-        return ResponseEntity.ok("✅ CompareImages API is active.");
+        return ResponseEntity.ok("CompareImages API is active.");
     }
 }

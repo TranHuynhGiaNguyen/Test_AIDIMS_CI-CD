@@ -28,6 +28,10 @@ public class AssignmentService {
         Patient patient = patientRepository.findById(patientId).orElseThrow();
         Doctor doctor = doctorRepository.findById(doctorId).orElseThrow();
 
+        if (doctor.getDepartment() == null || !doctor.getDepartment().equalsIgnoreCase(department)) {
+            throw new IllegalArgumentException("Chuyên khoa không khớp!");
+        }
+
         Assignment assignment = new Assignment();
         assignment.setPatient(patient);
         assignment.setDoctor(doctor);

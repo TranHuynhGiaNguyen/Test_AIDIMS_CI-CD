@@ -63,7 +63,7 @@ class AssignmentServiceTest {
     }
 
     @Test
-    @DisplayName("✅ assignDoctor - Phân công bác sĩ điều trị thành công")
+    @DisplayName("assignDoctor - Phan cong bac si dieu tri thanh cong")
     void assignDoctor_Success() {
         when(patientRepo.findById(1L)).thenReturn(Optional.of(samplePatient));
         when(doctorRepo.findById(2L)).thenReturn(Optional.of(sampleDoctor));
@@ -81,7 +81,7 @@ class AssignmentServiceTest {
     }
 
     @Test
-    @DisplayName("❌ assignDoctor - Ném ngoại lệ khi không tìm thấy bệnh nhân")
+    @DisplayName("assignDoctor - Nem ngoai le khi khong tim thay benh nhan")
     void assignDoctor_PatientNotFound() {
         when(patientRepo.findById(999L)).thenReturn(Optional.empty());
 
@@ -92,7 +92,7 @@ class AssignmentServiceTest {
     }
 
     @Test
-    @DisplayName("❌ assignDoctor - Ném ngoại lệ khi không tìm thấy bác sĩ")
+    @DisplayName("assignDoctor - Nem ngoai le khi khong tim thay bac si")
     void assignDoctor_DoctorNotFound() {
         when(patientRepo.findById(1L)).thenReturn(Optional.of(samplePatient));
         when(doctorRepo.findById(888L)).thenReturn(Optional.empty());
@@ -104,7 +104,7 @@ class AssignmentServiceTest {
     }
 
     @Test
-    @DisplayName("✅ getAllAssignments - Lấy danh sách toàn bộ phân công thành công")
+    @DisplayName("getAllAssignments - Lay danh sach toan bo phan cong thanh cong")
     void getAllAssignments_Success() {
         when(assignmentRepo.findAll()).thenReturn(Arrays.asList(sampleAssignment));
 
@@ -116,13 +116,11 @@ class AssignmentServiceTest {
     }
 
     @Test
-    @DisplayName("❌ Lỗi nghiệp vụ: Không được phép phân công bác sĩ vào chuyên khoa khác với chuyên khoa của họ")
+    @DisplayName("Loi nghiep vu: Khong duoc phep phan cong bac si vao chuyen khoa khac voi chuyen khoa cua ho")
     void assignDoctor_DepartmentMismatch_ThrowsException() {
         when(patientRepo.findById(1L)).thenReturn(Optional.of(samplePatient));
-        when(doctorRepo.findById(2L)).thenReturn(Optional.of(sampleDoctor)); // Bác sĩ thuộc khoa Cardiology
+        when(doctorRepo.findById(2L)).thenReturn(Optional.of(sampleDoctor));
 
-        // Cố gắng phân công bác sĩ (khoa Cardiology) vào khoa Pediatrics
-        // Thực tế Service không kiểm tra nên test này sẽ FAIL
         assertThrows(IllegalArgumentException.class, () -> 
             assignmentService.assignDoctor(1L, 2L, "Pediatrics"),
             "Chuyên khoa không khớp phải ném ra IllegalArgumentException"

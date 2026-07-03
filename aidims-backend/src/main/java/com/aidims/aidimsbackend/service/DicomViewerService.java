@@ -6,6 +6,8 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.HashMap;
@@ -320,6 +322,7 @@ public class DicomViewerService {
      */
     private String generateImageUrl(String fileName) {
         if (fileName == null) return null;
-        return "http://localhost:" + serverPort + "/api/dicom-viewer/image/" + fileName;
+        String encodedFileName = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "http://localhost:" + serverPort + "/api/dicom-viewer/image/" + encodedFileName;
     }
 }
