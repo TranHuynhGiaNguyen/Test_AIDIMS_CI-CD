@@ -148,7 +148,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"username\": \"1\",\n    \"password\": \"1\"\n}"
+          "raw": "{\n    \"username\": \"1\",\n    \"password\": \"1\",\n    \"role\": \"doctor\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/auth/login",
@@ -817,7 +817,7 @@
         "method": "POST",
         "header": [],
         "url": {
-          "raw": "{{base_url}}/api/receptionist/assign?patientId={{patientId}}&doctorId=4&department=Tim mạch&priority=Khẩn cấp&notes=Đau ngực cấp cứu",
+          "raw": "{{base_url}}/api/receptionist/assign?patientId={{patientId}}&doctorId=4&department=Tim mạch&priority=Cao&notes=Đau ngực cấp cứu",
           "host": [
             "{{base_url}}"
           ],
@@ -841,7 +841,7 @@
             },
             {
               "key": "priority",
-              "value": "Khẩn cấp"
+              "value": "Cao"
             },
             {
               "key": "notes",
@@ -1297,7 +1297,7 @@
         ],
         "body": {
           "mode": "raw",
-          "raw": "{\n    \"imageId\": \"{{importedDicomId}}\",\n    \"checkedBy\": 1,\n    \"result\": \"pending\",\n    \"note\": \"Kiểm định chất lượng X-quang Postman\"\n}"
+          "raw": "{\n    \"imageId\": \"{{importedDicomId}}\",\n    \"checkedBy\": 1,\n    \"result\": \"approved\",\n    \"note\": \"Kiểm định chất lượng X-quang Postman\"\n}"
         },
         "url": {
           "raw": "{{base_url}}/api/verify-image/save",
@@ -1322,7 +1322,7 @@
               "pm.test(\"Verification saved successfully\", function () {",
               "    var jsonData = pm.response.json();",
               "    pm.expect(jsonData.id).to.not.be.null;",
-              "    pm.expect(jsonData.result).to.eql(\"pending\");",
+              "    pm.expect(jsonData.result).to.eql(\"approved\");",
               "    pm.environment.set(\"verifyImageId\", jsonData.id);",
               "});"
             ],
@@ -1832,10 +1832,10 @@
               "pm.test(\"Status code is 400\", function () {",
               "    pm.response.to.have.status(400);",
               "});",
-              "pm.test(\"Response status is error and error message contains Chỉ hỗ trợ file .dcm\", function () {",
+              "pm.test(\"Response status is error and error message contains Chỉ hỗ trợ file DICOM\", function () {",
               "    var jsonData = pm.response.json();",
               "    pm.expect(jsonData.status).to.eql(\"error\");",
-              "    pm.expect(jsonData.analysisText).to.include(\"Chỉ hỗ trợ file .dcm\");",
+              "    pm.expect(jsonData.analysisText).to.include(\"Chỉ hỗ trợ file DICOM\");",
               "});"
             ],
             "type": "text/javascript"
