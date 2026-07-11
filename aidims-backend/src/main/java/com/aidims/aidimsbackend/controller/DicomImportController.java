@@ -16,6 +16,10 @@ import org.springframework.web.multipart.MultipartFile;
 import com.aidims.aidimsbackend.entity.DicomImport;
 import com.aidims.aidimsbackend.service.DicomFileService;
 import com.aidims.aidimsbackend.service.DicomImportService;
+import com.aidims.aidimsbackend.service.DicomConverterService;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.core.type.TypeReference;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/api/dicom-import")
@@ -27,6 +31,9 @@ public class DicomImportController {
 
     @Autowired
     private DicomFileService dicomFileService;
+
+    @Autowired
+    private DicomConverterService dicomConverterService;
 
     @PostMapping("/import")
     public ResponseEntity<?> importDicom(
@@ -101,6 +108,31 @@ public class DicomImportController {
         
         System.out.println("[DicomImport] File saved to: " + filePath);
 
+        // Trích xuất thông số kỹ thuật từ DICOM nếu chúng bị trống
+        String enrichedTechnicalParams = technicalParams;
+        try {
+            byte[] fileBytes = file.getBytes();
+            Map<String, String> extracted = dicomConverterService.extractTechnicalParams(fileBytes);
+            
+            ObjectMapper mapper = new ObjectMapper();
+            Map<String, String> existingMap = mapper.readValue(technicalParams, new TypeReference<Map<String, String>>() {});
+            
+            boolean updated = false;
+            for (Map.Entry<String, String> entry : extracted.entrySet()) {
+                String key = entry.getKey();
+                String val = entry.getValue();
+                if ((!existingMap.containsKey(key) || existingMap.get(key) == null || existingMap.get(key).trim().isEmpty()) && !val.isEmpty()) {
+                    existingMap.put(key, val);
+                    updated = true;
+                }
+            }
+            if (updated) {
+                enrichedTechnicalParams = mapper.writeValueAsString(existingMap);
+            }
+        } catch (Exception e) {
+            System.err.println("❌ Lỗi khi trích xuất thông số kỹ thuật DICOM: " + e.getMessage());
+        }
+
         // Tạo entity và lưu vào DB
         DicomImport dicomImport = new DicomImport();
         dicomImport.setFileName(originalFileName);
@@ -110,7 +142,7 @@ public class DicomImportController {
         dicomImport.setPatientName(patientName);
         dicomImport.setStudyType(studyType);
         dicomImport.setBodyPart(bodyPart);
-        dicomImport.setTechnicalParams(technicalParams);
+        dicomImport.setTechnicalParams(enrichedTechnicalParams);
         dicomImport.setNotes(notes);
         dicomImport.setStatus("imported");
         dicomImport.setPerformedBy(performedBy);

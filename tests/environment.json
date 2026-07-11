@@ -6,6 +6,12 @@
       "value": "http://localhost:8080",
       "type": "default",
       "enabled": true
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "default",
+      "enabled": true
     }
   ]
 }

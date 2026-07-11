@@ -77,10 +77,10 @@ const VerifyImages = () => {
 
         // Build correct URL for image and thumbnail
         const filePath = fileName
-          ? `/dicom_uploads/${fileName}`
+          ? `${backendUrl}/api/dicom-viewer/image/${encodeURIComponent(fileName)}`
           : null;
         const thumbnail = fileName
-          ? `/dicom_uploads/${fileName}`
+          ? `${backendUrl}/api/dicom-viewer/image/${encodeURIComponent(fileName)}`
           : "/placeholder-image.jpg";
 
         return {

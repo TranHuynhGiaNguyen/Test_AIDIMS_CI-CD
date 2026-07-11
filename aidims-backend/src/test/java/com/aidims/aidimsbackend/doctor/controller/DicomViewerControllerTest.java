@@ -2,6 +2,7 @@ package com.aidims.aidimsbackend.doctor.controller;
 
 import com.aidims.aidimsbackend.controller.DicomViewerController;
 import com.aidims.aidimsbackend.service.DicomViewerService;
+import com.aidims.aidimsbackend.service.DicomConverterService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
@@ -26,6 +27,9 @@ class DicomViewerControllerTest {
 
     @MockBean
     private DicomViewerService dicomViewerService;
+
+    @MockBean
+    private DicomConverterService dicomConverterService;
 
     @Test
     void getAllDicomViewer_shouldReturnOk() throws Exception {

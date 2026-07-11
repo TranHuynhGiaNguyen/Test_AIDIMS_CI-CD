@@ -2,6 +2,7 @@ package com.aidims.aidimsbackend.controller;
 
 import com.aidims.aidimsbackend.service.DicomFileService;
 import com.aidims.aidimsbackend.service.DicomImportService;
+import com.aidims.aidimsbackend.service.DicomConverterService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Nested;
@@ -29,6 +30,9 @@ class DicomImportControllerTest {
 
     @Mock
     private DicomFileService dicomFileService;
+
+    @Mock
+    private DicomConverterService dicomConverterService;
 
     @InjectMocks
     private DicomImportController dicomImportController;

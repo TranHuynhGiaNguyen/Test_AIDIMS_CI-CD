@@ -1,9 +1,11 @@
 package com.aidims.aidimsbackend.controller;
 
 import com.aidims.aidimsbackend.service.DicomViewerService;
+import com.aidims.aidimsbackend.service.DicomConverterService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.UrlResource;
+import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -24,6 +26,9 @@ public class DicomViewerController {
 
     @Autowired
     private DicomViewerService dicomViewerService;
+
+    @Autowired
+    private DicomConverterService dicomConverterService;
 
     /**
      * Lấy tất cả DICOM từ bảng dicom_imports
@@ -144,6 +149,26 @@ public class DicomViewerController {
                     if (!Files.exists(filePath)) {
                         Files.createFile(filePath);
                     }
+                }
+            }
+
+            // Nếu là file DICOM (.dcm), tự động convert sang JPEG để trình duyệt hiển thị được
+            if (fileName.toLowerCase().endsWith(".dcm") && filePath != null && Files.exists(filePath)) {
+                try {
+                    byte[] fileBytes = Files.readAllBytes(filePath);
+                    if (fileBytes.length > 0) {
+                        DicomConverterService.ConvertResult convertResult = dicomConverterService.convert(fileBytes);
+                        byte[] jpegBytes = java.util.Base64.getDecoder().decode(convertResult.base64Jpeg);
+                        
+                        return ResponseEntity.ok()
+                                .contentType(MediaType.IMAGE_JPEG)
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + fileName + ".jpg\"")
+                                .header(HttpHeaders.CACHE_CONTROL, "max-age=3600")
+                                .header("Access-Control-Allow-Origin", "*")
+                                .body(new ByteArrayResource(jpegBytes));
+                    }
+                } catch (Exception e) {
+                    System.err.println("❌ Lỗi chuyển đổi DICOM sang JPEG: " + e.getMessage());
                 }
             }
 

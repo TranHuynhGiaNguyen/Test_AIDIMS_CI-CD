@@ -23,6 +23,8 @@ import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import java.util.Base64;
 import java.util.Iterator;
+import java.util.Map;
+import java.util.HashMap;
 
 @Service
 public class DicomConverterService {
@@ -485,6 +487,36 @@ public class DicomConverterService {
         ios.close();
 
         return Base64.getEncoder().encodeToString(baos.toByteArray());
+    }
+
+    /**
+     * Trích xuất các thông số kỹ thuật từ file DICOM
+     */
+    public Map<String, String> extractTechnicalParams(byte[] dicomBytes) {
+        Map<String, String> params = new HashMap<>();
+        try (DicomInputStream dis = new DicomInputStream(new ByteArrayInputStream(dicomBytes))) {
+            dis.setIncludeBulkData(DicomInputStream.IncludeBulkData.NO);
+            Attributes attrs = dis.readDataset();
+            
+            String kvp = safe(attrs, Tag.KVP);
+            String mAs = safe(attrs, Tag.ExposureInmAs);
+            if ("N/A".equals(mAs)) {
+                mAs = safe(attrs, Tag.Exposure);
+            }
+            if ("N/A".equals(mAs)) {
+                mAs = safe(attrs, Tag.ExposureTime);
+            }
+            String sliceThickness = safe(attrs, Tag.SliceThickness);
+            String contrast = safe(attrs, Tag.ContrastBolusAgent);
+            
+            params.put("kVp", "N/A".equals(kvp) ? "" : kvp);
+            params.put("mAs", "N/A".equals(mAs) ? "" : mAs);
+            params.put("sliceThickness", "N/A".equals(sliceThickness) ? "" : sliceThickness);
+            params.put("contrast", "N/A".equals(contrast) ? "" : contrast);
+        } catch (Exception e) {
+            logger.error("Error extracting technical params from DICOM", e);
+        }
+        return params;
     }
 
     // ── Result wrapper ───────────────────────────────────────────────────
